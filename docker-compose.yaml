@@ -96,20 +96,23 @@ services:
       retries: 5
       start_period: 5s
     restart: always
-
-  # redis:
-  #   # Redis is limited to 7.2-bookworm due to licencing change
-  #   # https://redis.io/blog/redis-adopts-dual-source-available-licensing/
-  #   image: redis:7.2-bookworm
-  #   expose:
-  #     - 6379
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 30s
-  #     retries: 50
-  #     start_period: 30s
-  #   restart: always
+    networks:
+      - spark-airflow-postgres
+  database:
+    image: mysql:8.0
+    platform: linux/amd64
+    command:
+      - "--default-authentication-plugin=mysql_native_password"
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_DATABASE=db_simo
+      - MYSQL_USER=simo
+      - MYSQL_PASSWORD=simointhehouse
+    ports:
+      - "3306:3306"
+    restart: always
+    networks:
+      - spark-airflow-postgres
 
   airflow-webserver:
     <<: *airflow-common
@@ -127,6 +130,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - spark-airflow-postgres
 
   airflow-scheduler:
     <<: *airflow-common
@@ -142,29 +147,9 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - spark-airflow-postgres
 
-  # airflow-worker:
-  #   <<: *airflow-common
-  #   command: celery worker
-  #   healthcheck:
-  #     # yamllint disable rule:line-length
-  #     test:
-  #       - "CMD-SHELL"
-  #       - 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 5
-  #     start_period: 30s
-  #   environment:
-  #     <<: *airflow-common-env
-  #     # Required to handle warm shutdown of the celery workers properly
-  #     # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
-  #     DUMB_INIT_SETSID: "0"
-  #   restart: always
-  #   depends_on:
-  #     <<: *airflow-common-depends-on
-  #     airflow-init:
-  #       condition: service_completed_successfully
 
   airflow-triggerer:
     <<: *airflow-common
@@ -180,6 +165,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - spark-airflow-postgres
 
   airflow-init:
     <<: *airflow-common
@@ -244,6 +231,8 @@ services:
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
+    networks:
+      - spark-airflow-postgres
 
   airflow-cli:
     <<: *airflow-common
@@ -257,28 +246,39 @@ services:
       - bash
       - -c
       - airflow
+    networks:
+      - spark-airflow-postgres
 
-  # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
-  # or by explicitly targeted on the command line e.g. docker-compose up flower.
-  # See: https://docs.docker.com/compose/profiles/
-  # flower:
-  #   <<: *airflow-common
-  #   command: celery flower
-  #   profiles:
-  #     - flower
-  #   ports:
-  #     - "5555:5555"
-  #   healthcheck:
-  #     test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 5
-  #     start_period: 30s
-  #   restart: always
-  #   depends_on:
-  #     <<: *airflow-common-depends-on
-  #     airflow-init:
-  #       condition: service_completed_successfully
+  spark-master:
+    image: bitnami/spark:latest
+    command: bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+    environment:
+      Weather_API_key: ${Weather_API_key}
+    env_file:
+      - .env
+    networks:
+      - spark-airflow-postgres
+
+  spark-worker:
+    image: bitnami/spark:latest
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 1g
+      SPARK_MASTER_URL: spark://spark-master:7077
+      Weather_API_key: ${Weather_API_key}
+    env_file:
+      - .env
+    networks:
+      - spark-airflow-postgres
 
 volumes:
   postgres-db-volume:
+networks:
+  spark-airflow-postgres:
