@@ -1,10 +1,9 @@
 from datetime import datetime, timedelta
-from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
+# from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.models.connection import Connection
-from airflow.operators.python import PythonOperator
-from pyspark.sql import SparkSession
+# from airflow.operators.python import PythonOperator
 from airflow import DAG
-import requests
 
 default_args={
     'owner': "Simo",
@@ -21,31 +20,6 @@ c= Connection(
     login="simo",
     password="simointhehouse",
 )
-        
-
-def transform_data(res):
-    
-    try:
-        spark_s=SparkSession.builder \
-            .appName("WeatherDataSpark") \
-            .config("spark.jars","mysql-connector-java-8.0.13.jar") \
-            .getOrCreate()
-
-    except Exception as e:
-        print(f"Could not create Spark Session due to {e}")
-
-    df=spark_s.createDataFrame(res)
-    print(df)
-
-def get_request_weather_data():
-    # 49.111459997943115, 6.175108444784084
-    url=f"https://api.openweathermap.org/data/2.5/weather?lat=6.175108444784084&lon=49.111459997943115&appid=54ce3be99b6d93efb221eee5b5a8b52a"
-    try:
-        res=requests.get(url)
-        res=res.json()
-        transform_data(res)
-    except Exception as e:
-        print(f"Exception when get request : {e}")
 
 with DAG (
     'api_test_v1',
@@ -54,10 +28,15 @@ with DAG (
     catchup=False
 ) as dag:
     
-    
-    test_api=PythonOperator(
-        task_id='test_api',
-        python_callable=get_request_weather_data
+    # Define the Spark submit task
+    submit_job = SparkSubmitOperator(
+        application="/dags/pysparksubmitoperator.py",  # Path accessible by Spark
+        task_id="spark-submit",
+        conn_id="spark_default",  # Connection to Spark cluster
+        conf={
+            'spark.master': 'spark://spark-master:7077',  # Ensures it connects to the Docker Spark cluster
+            'spark.executor.memory': '2g',
+            'spark.executor.cores': '1'
+        },
     )
-    
-    test_api
+submit_job

@@ -2,4 +2,4 @@ SQLAlchemy~=1.4.31
 mysqlclient>=1.4.0
 mysql-connector-python>=8.0.29
 apache-airflow-providers-common-sql>=1.17.0
-pyspark
+apache-airflow-providers-apache-spark
