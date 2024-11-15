@@ -10,18 +10,18 @@ RUN apt-get update \
   && apt-get autoremove -yqq --purge \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
-USER airflow
+
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 # Download and install Spark
-# RUN curl -o spark-3.4.0-bin-hadoop3.tgz https://archive.apache.org/dist/spark/spark-3.4.0/spark-3.4.0-bin-hadoop3.tgz && \
-#     tar xvf spark-3.4.0-bin-hadoop3.tgz && \
-#     mv spark-3.4.0-bin-hadoop3 /opt/spark && \
-#     rm spark-3.4.0-bin-hadoop3.tgz
+RUN curl -o spark-3.4.0-bin-hadoop3.tgz https://archive.apache.org/dist/spark/spark-3.4.0/spark-3.4.0-bin-hadoop3.tgz && \
+    tar xvf spark-3.4.0-bin-hadoop3.tgz && \
+    mv spark-3.4.0-bin-hadoop3 /opt/spark && \
+    rm spark-3.4.0-bin-hadoop3.tgz
 
 # Set SPARK_HOME environment variable
-# ENV SPARK_HOME="/opt/spark"
-# ENV PATH="$PATH:$SPARK_HOME/bin"
+ENV SPARK_HOME="/opt/spark"
+ENV PATH="$PATH:$SPARK_HOME/bin"
 USER airflow
 # Install Airflow Spark Provider
 RUN pip install --upgrade pip && \

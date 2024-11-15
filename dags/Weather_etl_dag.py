@@ -4,6 +4,9 @@ from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOpe
 from airflow.models.connection import Connection
 # from airflow.operators.python import PythonOperator
 from airflow import DAG
+import os
+
+SPARK_HOME=os.getenv("SPARK_HOME")
 
 default_args={
     'owner': "Simo",
@@ -30,7 +33,7 @@ with DAG (
     
     # Define the Spark submit task
     submit_job = SparkSubmitOperator(
-        application="/dags/pysparksubmitoperator.py",  # Path accessible by Spark
+        application=f"{SPARK_HOME}/jobs/pysparksubmitoperator.py",  # Path accessible by Spark
         task_id="spark-submit",
         conn_id="spark_default",  # Connection to Spark cluster
         conf={
