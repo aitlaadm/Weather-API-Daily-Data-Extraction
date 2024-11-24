@@ -2,9 +2,10 @@ from datetime import datetime, timedelta
 # from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.models.connection import Connection
-# from airflow.operators.python import PythonOperator
 from airflow import DAG
 import os
+
+from pyspark.sql import SparkSession
 
 SPARK_HOME=os.getenv("SPARK_HOME")
 
@@ -12,7 +13,7 @@ default_args={
     'owner': "Simo",
     'retries':5,
     'start_date': datetime(2024,11,5),
-    'retry_delay': timedelta(minutes=5)
+    'retry_delay': timedelta(minutes=1)
 }
 
 c= Connection(
@@ -24,10 +25,13 @@ c= Connection(
     password="simointhehouse",
 )
 
+
+
+
 with DAG (
     'api_test_v1',
     default_args=default_args,
-    schedule_interval='@daily',
+    schedule_interval=None,
     catchup=False
 ) as dag:
     

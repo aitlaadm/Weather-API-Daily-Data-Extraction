@@ -1,7 +1,8 @@
 import requests
 from pyspark.sql import SparkSession
+from airflow.models.xcom import XCom
 
-def transform_data(res):
+def transform_data(ti):
     
     try:
         spark_s=SparkSession.builder \
@@ -14,10 +15,6 @@ def transform_data(res):
         res=requests.get(url)
         res=res.json()
         df=spark_s.createDataFrame(res)
-        print(df)
+        ti.xcom_push(key="weather_df", value=df)
     except Exception as e:
         print(f"Spark Submit Task Error :{e}")
-
-
-    
-

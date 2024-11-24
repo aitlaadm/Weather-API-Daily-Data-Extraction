@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "vibrant-grammar-442516-b0",
+  "private_key_id": "934e296c412b0e2e169708c4af59302072ecec43",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDDzlWFlEpaH6E+\nX/bN9SOs46W1hIMA4DsHF193rlxXGhSLyeYlLJHNf20XsXBYzm31g3Vorcs/6zun\noFa72KtPtOT7/NFRFNqIy09yOBDTRlaBcbh/97zm7LCoAobjGEWPC5xzCDy+kKnm\n3ST+Qro6NhApwdQoFDm540ik5hhrrqzcwP7svsv2/In+PGNO0aQvCvs/9A3DinYM\nvJqaXMcpUZZLhNuUnR9hxePzfOWijC4QLbEpp3Sr7+OgRHUUjgQ/2lrf+WOVgVvW\ncH5pd2E6YL7XrR/2AZIKl5pM12oAsSMW5Z8AkaxhH9xpohBSGdPFPV7ca5FTj8jR\nNXxydMddAgMBAAECggEAKCUsBiLw+pjdEaGRw8jkq1wSO8zjIiEXIR1S6sISNx6H\nA2EeAVWpwCEF4DN2VhLe2xU8k318fEqxtKzMU5+5AfLT9vEvBkl5A85xZ7jkhDi5\n4DjNa9lCfvMcxhmch7+QdWNbTH9uGuEkoIuLO+E49tniRvlxUtVQv5LAsGRnsd3m\nqgES6QWcM0iJy9pyC4bAI0U946r3niM3R6vg/1oHWXVKjoljiM9EW9WBOQKpT6oA\n269mWhsh5hB7y5SNl+vWVWCtOrvs+fSkSSbpDY6KAUujYI82fzpi4nInlk8Ig/jm\ncuK+ledn9YFmiggLpVnomV1MpMH4MDTjoVfcsjppKQKBgQDszzdQihxBwDhCB6ww\nujBm2keFuezlnCM6wsfYuVR/hgEnxJbVokYASgmxoz0BlvGPppdkmMs7+hLhNV8R\n76if1HN4Mlt/teYJWeX2wfKgIlPEpFDWypKC3Ik9qQGa8I2glW1uPsM2wfsit39U\ndJBtnpliCo1bN2q65sBZUYJ5uQKBgQDTrHjCepLbDfdy+IkLn8PXDbhVlFbC2eqP\nZt/Ue+D53Lwjcg3pGQjPD9mhksvj1F2W3nLT8PvZGyN9tnvfbBrmfWCiYO24PwIt\nAoqN+Ibh1p4ry2jqlz0Bx6UWkkRJWYKsIlj6i772jLym2E9ZzP+Tf+NNgAgjBpmX\nJQT9hJP8xQKBgQCw3CnhuuRTru3VUsmlMslHZ6qXEz78VVpyXlrHX9Ld0wU14DsO\nnr1NJf6LbvD3KPaMZM0Y0oym5KQJEsVILgdwJ0l98Y4omX+OaFe5rSw5sKmDaXz+\njhhSJ8dQB9MtFo+P6UnrVnCRitq3GPi96LidRiAj+uGLyJ2rrP7nNlsN8QKBgF+u\nPofqUCekkI3vukL+3M+A7CoC+5ToXBamMdcih/dpx8Fd9NvA7TJrv7xBVtiNTiC8\nPLuA2tawZcKVkjjT7PTzB5NerRXzpVAjLe4uwQmksaqqL6qa4oDDdeRWCXf+dgrJ\nG99k+9UGmN/yNywodf5+eIi3rvXmLdccbL0MCLjhAoGBAKLc3YshU2O8Xlh0lj6j\nPC4P1wmKhUBmSNo51kdHokdVQxJRkzYzFB/WAnIVbRifaKyUx4/2HI820iOFmssg\nr3E/sBF4mbqlneUKiJt/EviOfBicT0CYdyR3nCdLRhcfCiqwaa8PE7qtcrXbw9yW\nJF+MZHRAva0+5/nefVxa+paS\n-----END PRIVATE KEY-----\n",
+  "client_email": "airflow-service-account@vibrant-grammar-442516-b0.iam.gserviceaccount.com",
+  "client_id": "105094540074385695611",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/airflow-service-account%40vibrant-grammar-442516-b0.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
