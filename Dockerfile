@@ -4,7 +4,6 @@ FROM apache/airflow:2.10.2
 USER root
 # Copy requirements and install Python dependencies
 COPY requirements.txt ./
-COPY vibrant-grammar-442516-b0-934e296c412b.json /opt/airflow/gcs-key.json
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends openjdk-17-jre-headless \
@@ -28,14 +27,12 @@ ENV WEATHER_API_KEY="54ce3be99b6d93efb221eee5b5a8b52a"
 ENV SPARK_HOME="/opt/spark"
 ENV PATH="$PATH:$SPARK_HOME/bin"
 #Set GCS as XCom backend
-ENV AIRFLOW__CORE__XCOM_BACKEND=airflow.providers.google.cloud.hooks.gcs.GCSXComBackend
-ENV GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/gcs-key.json
-ENV AIRFLOW__CORE__GCS_BUCKET_NAME=simo_gcs_airflow
+# ENV AIRFLOW__CORE__GCS_BUCKET_NAME=simo_gcs_airflow
 # Switch back to airflow user
 USER airflow
 # Install Airflow Spark Provider
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir --force-reinstall -r requirements.txt
 
 
 

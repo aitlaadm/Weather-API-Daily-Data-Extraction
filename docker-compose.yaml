@@ -59,6 +59,11 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'False'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    AIRFLOW__CORE__XCOM_BACKEND: airflow.providers.google.cloud.xcom_backends.gcs.GCSXComBackend
+    AIRFLOW__CORE__XCOM_GCS_BUCKET: simo_gcs_airflow
+    AIRFLOW__CORE__XCOM_GCS_KEY_PREFIX: xcom_data/
+    AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: google-cloud-platform://?extra__google_cloud_platform__key_path=/opt/airflow/gcs-key.json
+
     # yamllint disable rule:line-length
     # Use simple http server on scheduler for health checks
     # See https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/logging-monitoring/check-health.html#scheduler-health-check-server
@@ -76,6 +81,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/jobs:/opt/spark/jobs
+    - ${AIRFLOW_PROJ_DIR:-.}/vibrant-grammar-442516-b0-3a64564f8206.json:/opt/airflow/gcs-key.json
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
