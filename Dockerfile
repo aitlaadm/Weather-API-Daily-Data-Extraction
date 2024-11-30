@@ -7,7 +7,7 @@ COPY requirements.txt ./
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends openjdk-17-jre-headless \
-  # && apt-get autoremove -yqq --purge \
+  && apt-get autoremove -yqq --purge \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -30,7 +30,7 @@ ENV PATH="$PATH:$SPARK_HOME/bin"
 # ENV AIRFLOW__CORE__GCS_BUCKET_NAME=simo_gcs_airflow
 # Switch back to airflow user
 USER airflow
-# Install Airflow Spark Provider
+# Install requirements
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir --force-reinstall -r requirements.txt
 
