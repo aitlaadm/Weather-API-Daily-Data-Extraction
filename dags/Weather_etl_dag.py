@@ -40,10 +40,7 @@ with DAG (
         application=f"{SPARK_HOME}/jobs/pysparksubmitoperator.py",  # Path accessible by Spark
         task_id="spark-submit",
         conn_id="spark_default",  # Connection to Spark cluster
-        conf={
-            'spark.master': 'spark://spark-master:7077',  # Ensures it connects to the Docker Spark cluster
-            'spark.executor.memory': '2g',
-            'spark.executor.cores': '1'
-        },
+        packages='com.datastax.spark:spark-cassandra-connector_2.12:3.4.0',
+        verbose=True
     )
 submit_job

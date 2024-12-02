@@ -3,6 +3,6 @@
 # mysql-connector-python>=8.0.29
 # apache-airflow-providers-common-sql>=1.17.0
 apache-airflow-providers-apache-spark
-cassandra-driver==3.28.0
+cassandra-driver
 # apache-airflow-providers-google==7.0.0
 # protobuf==3.20.3

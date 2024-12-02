@@ -16,16 +16,19 @@ RUN curl -o spark-3.4.0-bin-hadoop3.tgz https://archive.apache.org/dist/spark/sp
     tar xvf spark-3.4.0-bin-hadoop3.tgz && \
     mv spark-3.4.0-bin-hadoop3 /opt/spark && \
     rm spark-3.4.0-bin-hadoop3.tgz
-
-#Add Java to PATH
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-# Add OCI CLI to PATH
-ENV PATH="/root/bin:$PATH"
-
 # Set SPARK_HOME & WEATHER API environment variable
 ENV WEATHER_API_KEY="54ce3be99b6d93efb221eee5b5a8b52a"
 ENV SPARK_HOME="/opt/spark"
 ENV PATH="$PATH:$SPARK_HOME/bin"
+ENV SPARK_CASSANDRA_CONNECTOR_VERSION=3.4.0
+ENV SCALA_VERSION=2.12
+# Download the Spark-Cassandra Connector
+RUN curl -L -o $SPARK_HOME/jars/spark-cassandra-connector_${SCALA_VERSION}-${SPARK_CASSANDRA_CONNECTOR_VERSION}.jar \
+    https://downloads.datastax.com/cassandra-dev/spark-cassandra-connector_${SCALA_VERSION}-${SPARK_CASSANDRA_CONNECTOR_VERSION}.jar
+#Add Java to PATH
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+# Add OCI CLI to PATH
+ENV PATH="/root/bin:$PATH"
 #Set GCS as XCom backend
 # ENV AIRFLOW__CORE__GCS_BUCKET_NAME=simo_gcs_airflow
 # Switch back to airflow user

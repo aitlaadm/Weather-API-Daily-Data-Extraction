@@ -36,7 +36,7 @@ schema=StructType(
   )
 def connect_cassandra():
     try:
-        cluster = Cluster(['localhost'])
+        cluster = Cluster(['cassandra'])
         
         cas_session=cluster.connect()
         
@@ -44,27 +44,29 @@ def connect_cassandra():
     except Exception as e:
         print(f"Error when Connecting to Cassandra Cluster {e}")
 def create_cassandra_table(session):
+    
     session.execute("""
                     CREATE TABLE IF NOT EXISTS metz_meteo.meteo (
-                        id PRIMARY KEY,
+                        id UUID PRIMARY KEY,
+                        id_meteo TEXT,
                         lon TEXT,
                         lat TEXT,
-                        main TEXT
+                        main TEXT,
                         description TEXT,
                         icon TEXT,
                         base TEXT,
-                        temp DOUBLE,
-                        feels_like DOUBLE,
-                        temp_max DOUBLE,
-                        temp_min DOUBLE,
+                        temp FLOAT,
+                        feels_like FLOAT,
+                        temp_max FLOAT,
+                        temp_min FLOAT,
                         pressure TEXT,
                         humidity INT,
                         sea_level INT,
                         visibility INT,
-                        speed DOUBLE,
+                        speed FLOAT,
                         deg TEXT,
                         all INT,
-                        df DATE,
+                        df TIMESTAMP,
                         country TEXT,
                         sunrise DATE,
                         sunset DATE,
@@ -74,11 +76,12 @@ def create_cassandra_table(session):
                         );
                     """)
 def create_spark_cassandra_connection():
+    
     try:
         s_conn=SparkSession.builder \
             .appName("Spark_Cassandra_Connection") \
-            .config('spark.jars.packages',"com.datastax.spark:spark-cassandra-connector_2.13:3.4.1") \
-            .config('spark.cassandra.connection.host','localhost') \
+            .config('spark.jars.packages',"com.datastax.spark:spark-cassandra-connector_2.12:3.4.0") \
+            .config('spark.cassandra.connection.host','cassandra') \
             .getOrCreate()
         return s_conn
     except Exception as e:
@@ -100,7 +103,6 @@ def get_clean_data():
       spark_s=SparkSession.builder \
           .appName("WeatherDataSpark") \
           .getOrCreate()
-      sc=spark_s.sparkContext
       # Metz coordinates: 49.111459997943115, 6.175108444784084
       url=f"https://api.openweathermap.org/data/2.5/weather?lat=49.111459997943115&lon=6.175108444784084&lang=fr&appid=54ce3be99b6d93efb221eee5b5a8b52a"
       res=requests.get(url)
@@ -115,8 +117,7 @@ def get_clean_data():
             flatten_obj.update(v[0])
         else:
             flatten_obj[at] = v
-          
-      df=spark_s.createDataFrame(data=[flatten_obj],schema=schema)
+      df=spark_s.createDataFrame(data=[flatten_obj], schema=schema)
       return df
   except Exception as e:
       print(f"Spark Submit Task Error :{e}")
@@ -129,10 +130,10 @@ def data_trans_clean():
     df=df.withColumn(field, format_number(col(field)-273.15,2))
 #Convert from unix time to datetime
   time_cols=['dt','sunrise','sunset']
-  #convert time values from unix time to UTC datetime & persist df in cache
+  #convert time values from unix time to UTC datetime
   for field in time_cols:
     df=df.withColumn(field, from_unixtime(col(field)))
-    return df
+  return df
     
 if __name__=="__main__":
     s_c=create_spark_cassandra_connection()
@@ -143,10 +144,14 @@ if __name__=="__main__":
         if session is not None:
             create_cassandra_keyspace(session)
             create_cassandra_table(session)
-            
-            insert_query=df.writeStream.format("org.apache.spark.sql.cassandra") \
-                            .option('checkpointLocation', 'tmp/checkpoint') \
-                            .option('keyspace','metz_meteo') \
-                            .option('table', 'meteo') \
-                            .start()
-            insert_query.awaitTermination()
+            try:
+                df.write.format("org.apache.spark.sql.cassandra") \
+                    .option("batch.size.rows", 100) \
+                    .option("write.timeoutMS", "20000") \
+                    .option("spark.cassandra.output.concurrent.writes", "5") \
+                    .option("spark.cassandra.output.batch.size.bytes", "1024") \
+                    .options(table='meteo',keyspace='metz_meteo') \
+                    .mode("append") \
+                    .save()
+            except Exception as e:
+                print(f"Could not write to cassandra error : {e}")
