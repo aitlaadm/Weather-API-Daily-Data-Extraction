@@ -1,5 +1,5 @@
 # Use the base Airflow image
-FROM apache/airflow:2.10.2
+FROM apache/airflow:2.10.2-python3.11
 
 USER root
 # Copy requirements and install Python dependencies

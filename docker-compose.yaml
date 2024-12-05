@@ -99,21 +99,6 @@ services:
     restart: always
     networks:
       - spark-airflow-postgres
-  database:
-    image: mysql:8.0
-    platform: linux/amd64
-    command:
-      - "--default-authentication-plugin=mysql_native_password"
-    environment:
-      - MYSQL_RANDOM_ROOT_PASSWORD=yes
-      - MYSQL_DATABASE=db_simo
-      - MYSQL_USER=simo
-      - MYSQL_PASSWORD=simointhehouse
-    ports:
-      - "3306:3306"
-    restart: always
-    networks:
-      - spark-airflow-postgres
 
   airflow-webserver:
     <<: *airflow-common
@@ -252,7 +237,7 @@ services:
 
   x-spark-common:
     &spark-common
-    image: bitnami/spark:latest
+    image: bitnami/spark:3.4.1
     volumes:
       - ./jobs:/opt/spark/jobs
     networks:
@@ -261,6 +246,8 @@ services:
   spark-master:
     <<: *spark-common
     command: bin/spark-class org.apache.spark.deploy.master.Master
+    depends_on:
+      - cassandra_db
     ports:
       - "9090:8080"
       - "7077:7077"
@@ -272,24 +259,45 @@ services:
       - spark-master
     environment:
       SPARK_MODE: worker
-      SPARK_WORKER_CORES: 2
-      SPARK_WORKER_MEMORY: 4g
+      SPARK_WORKER_CORES: 1
+      SPARK_WORKER_MEMORY: 2g
       SPARK_MASTER_URL: spark://spark-master:7077
-      SPARK_NUM_EXECUTORS: 4
+      SPARK_WORKER_OPTS: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=3600 -Dspark.worker.cleanup.appDataTtl=7200"
+      SPARK_EXECUTOR_OPTS: "-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/opt/spark/logs"
+    volumes:
+      - ./spark-logs:/opt/spark/logs
+
+  spark-worker-1:
+    <<: *spark-common
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_WORKER_CORES: 1
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_OPTS: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=3600 -Dspark.worker.cleanup.appDataTtl=7200"
+      SPARK_EXECUTOR_OPTS: "-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/opt/spark/logs"
+    volumes:
+      - ./spark-logs:/opt/spark/logs
+
 
   cassandra_db:
-    image: cassandra:latest
+    image: cassandra:4.1
     container_name: cassandra
     hostname: cassandra
     ports:
       - "9042:9042"
     environment:
-      # - MAX_HEAP_SIZE=512M
-      # - HEAP_NEWSIZE=100M
-      - CASSANDRA_USERNAME=cassandra
-      - CASSANDRA_PASSWORD=cassandra
+    - CASSANDRA_CLUSTER_NAME=SparkCluster
+    - CASSANDRA_NUM_TOKENS=256
+    - CASSANDRA_DC=datacenter1
+    - CASSANDRA_RACK=rack1
     networks:
       - spark-airflow-postgres
+    volumes:
+      - ./cassandra-data:/var/lib/cassandra
 
 volumes:
   postgres-db-volume:
