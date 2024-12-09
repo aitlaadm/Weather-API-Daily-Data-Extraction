@@ -4,6 +4,7 @@ from pyspark.sql import SparkSession
 from cassandra.cluster import Cluster
 from pyspark.sql.types import StructType,StructField, StringType, IntegerType, DoubleType
 from pyspark.sql.functions import col, format_number, from_unixtime, udf, to_timestamp
+from airflow.exceptions import AirflowException
 import os
 
 # load variables from .env
@@ -36,6 +37,65 @@ schema=StructType(
       StructField("name", StringType(), True),
       StructField("cod", IntegerType(), True)]
   )
+def connect_cassandra():
+    try:
+        cluster = Cluster(['cassandra'])
+        
+        cas_session=cluster.connect()
+        
+        return cas_session
+    except AirflowException as e:
+        print(f"Error when Connecting to Cassandra Cluster {e}")
+        
+def create_cassandra_keyspace(session):
+    try:
+        session.execute("""
+                        CREATE KEYSPACE IF NOT EXISTS metz_meteo
+                        WITH replication = {'class': 'SimpleStrategy','replication_factor':'1'}
+                        """)
+        print("Cassandra Keyspace created successfully")
+    except AirflowException as e:
+        print(f'Could not create cassandra keyspace due to {e}') 
+        
+def create_cassandra_meteo_table(session):
+    try:
+        session.execute("""
+                        DROP TABLE IF EXISTS metz_meteo.meteo;
+                        """)
+        session.execute("""
+                        CREATE TABLE metz_meteo.meteo (
+                            id UUID PRIMARY KEY,
+                            id_meteo TEXT,
+                            lon TEXT,
+                            lat TEXT,
+                            main TEXT,
+                            description TEXT,
+                            icon TEXT,
+                            base TEXT,
+                            temp FLOAT,
+                            feels_like FLOAT,
+                            temp_max FLOAT,
+                            temp_min FLOAT,
+                            pressure TEXT,
+                            humidity INT,
+                            sea_level FLOAT,
+                            grnd_level FLOAT,
+                            visibility INT,
+                            speed FLOAT,
+                            deg TEXT,
+                            all INT,
+                            dt TIMESTAMP,
+                            country TEXT,
+                            sunrise TIMESTAMP,
+                            sunset TIMESTAMP,
+                            timezone INT,
+                            name TEXT,
+                            cod INT
+                            );
+                        """)
+        print("Cassandra table Created Successfully !")
+    except AirflowException as e:
+        print(f"Failed to Create Cassandra meteo Table due to : {e}")
         
 def create_spark_cassandra_connection():   
     try:
@@ -44,10 +104,9 @@ def create_spark_cassandra_connection():
             .config('spark.jars.packages',"com.datastax.spark:spark-cassandra-connector_2.12:3.4.0") \
             .config('spark.cassandra.connection.host','cassandra') \
             .getOrCreate()
-        # s_conn.conf.set("spark.cassandra.input.schema.forceGetMetadata", "true")
 
         return s_conn
-    except Exception as e:
+    except AirflowException as e:
         print(f'Cassandra Spark Connection Error: {e}')
         
         
@@ -78,31 +137,40 @@ def get_clean_data():
     df_with_uuid=df.withColumn('id',uuidudf())
     
     return df_with_uuid
-  except Exception as e:
-      print(f"Spark Submit Task Error :{e}")
+  except AirflowException as e:
+      print(f"[Meteo] Failed to Get/Flatten Data {e}")
       
 def data_trans_clean():
-  df=get_clean_data()
-  # Convert temperatures from kalvin to celsuis
-  temp_cols=['temp','feels_like','temp_min','temp_max']
-  for field in temp_cols:
-    df=df.withColumn(field, format_number(col(field)-273.15,2))
-  #Convert from unix time to datetime
-  time_cols=['dt','sunrise','sunset']
-  #convert time values from unix time to UTC datetime
-  for field in time_cols:
-    df=df.withColumn(field, to_timestamp(from_unixtime(col(field)),"yyyy-MM-dd HH:mm:ss"))
-  return df
+  try:
+    df=get_clean_data()
+    # Convert temperatures from kalvin to celsuis
+    temp_cols=['temp','feels_like','temp_min','temp_max']
+    for field in temp_cols:
+      df=df.withColumn(field, format_number(col(field)-273.15,2))
+    #Convert from unix time to datetime
+    time_cols=['dt','sunrise','sunset']
+    #convert time values from unix time to UTC datetime
+    for field in time_cols:
+      df=df.withColumn(field, to_timestamp(from_unixtime(col(field)),"yyyy-MM-dd HH:mm:ss"))
+    return df
+  except AirflowException as e:
+    print(f"[Pollution] Failed to Transform Data Due to : {e}")
     
 if __name__=="__main__":
     s_c=create_spark_cassandra_connection()
     if s_c is not None:
+      session=connect_cassandra()
+      if session is not None:
+        create_cassandra_keyspace(session)
+        create_cassandra_meteo_table(session)
         df=data_trans_clean()
         try:
             df.write.format("org.apache.spark.sql.cassandra") \
             .options(table='meteo',keyspace='metz_meteo') \
             .mode("append") \
             .save()
+            session.shutdown()
+            s_c.stop()
             print("[Meteo] Data Written successfuly !")
-        except Exception as e:
+        except AirflowException as e:
             print(f"[Meteo] Failed to write data to cassandra due to : {e}")
